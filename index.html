@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#05070b" />
+  <meta name="description" content="Alien Radio – free worldwide radio + free audiobooks" />
+  <title>Alien Radio</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Alien Radio" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#05070b; --panel:#0b0f17; --card:#121722; --elevated:#1a2130;
+      --accent:#7cfc00; --accent-dim:#5cb800; --cyan:#00ffcc; --purple:#b388ff;
+      --text:#eef0f4; --muted:#8b939e; --border:#1e2533; --danger:#ff5252;
+      --glow:rgba(124,252,0,.4);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;overflow:hidden}
+    body{
+      font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);
+      display:flex;justify-content:center;align-items:stretch;padding:8px;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 15% -10%,rgba(124,252,0,.09),transparent),
+        radial-gradient(ellipse 60% 40% at 90% 110%,rgba(179,136,255,.07),transparent);
+    }
+    .app{
+      width:100%;max-width:540px;height:100%;max-height:100%;
+      background:var(--panel);border-radius:22px;border:1px solid var(--border);
+      box-shadow:0 30px 60px -20px rgba(0,0,0,.85);
+      display:flex;flex-direction:column;overflow:hidden;
+    }
+
+    /* Header */
+    .header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;
+      background:linear-gradient(180deg,rgba(124,252,0,.04),transparent);
+    }
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand img{
+      width:46px;height:46px;border-radius:50%;border:2px solid var(--accent);
+      object-fit:cover;background:#000;box-shadow:0 0 16px var(--glow);
+    }
+    .brand h1{
+      font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;
+      background:linear-gradient(100deg,var(--accent),var(--cyan));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .brand p{font-size:10px;color:var(--muted);margin-top:1px}
+    .live-dot{
+      width:8px;height:8px;border-radius:50%;background:var(--accent);
+      box-shadow:0 0 8px var(--accent);display:none;animation:blink 1.4s infinite;
+    }
+    .live-dot.on{display:block}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* Main tabs */
+    .main-tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);flex-shrink:0}
+    .main-tab{
+      background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:600;
+      padding:11px;cursor:pointer;font-family:inherit;position:relative;
+    }
+    .main-tab.active{color:var(--accent)}
+    .main-tab.active::after{
+      content:'';position:absolute;bottom:0;left:25%;right:25%;height:2px;
+      background:var(--accent);border-radius:2px 2px 0 0;
+    }
+
+    .panel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+    .panel.active{display:flex}
+
+    .search-wrap{padding:10px 12px 6px;flex-shrink:0}
+    .search-bar{
+      display:flex;align-items:center;background:var(--card);border:1px solid var(--border);
+      border-radius:12px;padding:3px 3px 3px 12px;
+    }
+    .search-bar:focus-within{border-color:var(--accent)}
+    .search-bar input{
+      flex:1;background:transparent;border:none;outline:none;color:var(--text);
+      font-size:13px;font-family:inherit;padding:9px 0;
+    }
+    .search-bar input::placeholder{color:var(--muted)}
+    .search-bar button{
+      background:linear-gradient(135deg,var(--accent),var(--accent-dim));border:none;
+      border-radius:10px;padding:9px 14px;color:#081000;font-weight:700;font-size:12px;
+      cursor:pointer;font-family:inherit;
+    }
+
+    .sub-tabs{display:flex;gap:4px;padding:6px 12px 4px;flex-shrink:0}
+    .sub-tab{
+      flex:1;text-align:center;padding:7px 4px;font-size:11px;font-weight:600;
+      color:var(--muted);background:transparent;border:none;border-radius:8px;
+      cursor:pointer;font-family:inherit;
+    }
+    .sub-tab.active{background:rgba(124,252,0,.1);color:var(--accent)}
+
+    .filters{
+      display:flex;gap:5px;padding:6px 12px 8px;overflow-x:auto;flex-shrink:0;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    }
+    .filters::-webkit-scrollbar{display:none}
+    .chip{
+      flex-shrink:0;padding:6px 11px;border-radius:16px;background:var(--card);
+      border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:600;
+      cursor:pointer;font-family:inherit;white-space:nowrap;
+    }
+    .chip.active,.chip:hover{background:rgba(124,252,0,.12);border-color:var(--accent);color:var(--accent)}
+
+    .list-header{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:0 14px 6px;font-size:11px;color:var(--muted);flex-shrink:0;
+    }
+    .surprise-btn{
+      background:transparent;border:1px solid var(--border);color:var(--cyan);
+      font-size:11px;font-weight:600;padding:4px 9px;border-radius:7px;
+      cursor:pointer;font-family:inherit;
+    }
+
+    /* CRITICAL: scrollable list */
+    .list-wrap{
+      flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      margin:0 10px;border-radius:12px;border:1px solid var(--border);background:var(--card);
+      scrollbar-width:thin;scrollbar-color:#2a3344 transparent;
+    }
+    .item{
+      display:flex;align-items:center;gap:11px;padding:10px 11px;cursor:pointer;
+      border-bottom:1px solid rgba(30,37,51,.7);
+    }
+    .item:last-child{border-bottom:none}
+    .item:hover{background:rgba(124,252,0,.05)}
+    .item.playing{background:rgba(124,252,0,.09);border-left:3px solid var(--accent)}
+    .item-icon{
+      width:40px;height:40px;border-radius:9px;background:var(--elevated);
+      object-fit:cover;flex-shrink:0;
+    }
+    .item-icon.ph{display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
+    .item-info{flex:1;min-width:0}
+    .item-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .item-meta{font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .item-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+    .heart{width:30px;height:30px;border:none;background:transparent;color:var(--muted);font-size:15px;cursor:pointer}
+    .heart.on{color:#ff6b9d}
+    .dl-btn{
+      font-size:10px;font-weight:700;color:var(--accent);background:rgba(124,252,0,.1);
+      border:1px solid rgba(124,252,0,.35);padding:5px 8px;border-radius:7px;cursor:pointer;
+      font-family:inherit;white-space:nowrap;
+    }
+    .play-ico{width:22px;text-align:center;font-size:13px;color:var(--accent);opacity:0}
+    .item:hover .play-ico,.item.playing .play-ico{opacity:1}
+
+    .empty,.loading,.err{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;line-height:1.5}
+    .err{color:var(--danger)}
+    .empty .big{font-size:32px;margin-bottom:8px}
+
+    .load-more{
+      display:none;margin:8px auto;padding:8px 16px;background:var(--card);
+      border:1px solid var(--border);color:var(--accent);font-size:12px;font-weight:600;
+      border-radius:9px;cursor:pointer;font-family:inherit;flex-shrink:0;
+    }
+    .load-more.show{display:block}
+
+    /* Radio player bar */
+    .player-bar{
+      flex-shrink:0;border-top:1px solid var(--border);padding:8px 12px 12px;display:none;
+      background:linear-gradient(180deg,transparent,rgba(124,252,0,.03));
+    }
+    .player-bar.show{display:block}
+    .viz-wrap{height:28px;margin-bottom:8px;border-radius:7px;overflow:hidden;background:#070a10;border:1px solid #151a24}
+    #viz{width:100%;height:100%;display:block}
+    .np{display:flex;align-items:center;gap:10px}
+    .np-logo{width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;box-shadow:0 0 12px var(--glow);flex-shrink:0;background:#000}
+    .np-text{flex:1;min-width:0}
+    .np-label{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase}
+    .np-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+    .np-sub{font-size:10px;color:var(--muted);margin-top:1px}
+    .np-btns{display:flex;gap:5px;align-items:center}
+    .np-btn{
+      width:34px;height:34px;border-radius:50%;border:1px solid var(--border);
+      background:var(--card);color:var(--text);font-size:13px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .np-btn.main{
+      width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--accent-dim));
+      border:none;color:#081000;font-size:16px;box-shadow:0 0 14px var(--glow);
+    }
+    .np-btn.heart-btn.on{color:#ff6b9d;border-color:#ff6b9d}
+    .controls-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+    .vol-group{display:flex;align-items:center;gap:6px;flex:1}
+    .vol-group button{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer}
+    .vol-group input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:#1a2130;outline:none}
+    .vol-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 6px var(--glow)}
+    .timer-btn{font-size:10px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:5px 8px;border-radius:7px;cursor:pointer;font-family:inherit}
+    .timer-btn.active{color:var(--purple);border-color:var(--purple)}
+
+    /* Book radio-style player (full panel) */
+    .book-player{
+      display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;padding:12px;
+    }
+    .book-player.show{display:flex}
+    .bp-back{
+      background:none;border:none;color:var(--accent);font-size:12px;font-weight:600;
+      cursor:pointer;font-family:inherit;margin-bottom:10px;text-align:left;align-self:flex-start;
+    }
+    .bp-lcd{
+      background:#0a0e14;border:1px solid #151a22;border-radius:14px;padding:14px;
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.5);margin-bottom:12px;flex-shrink:0;
+    }
+    .bp-lcd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .bp-mode{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--accent);letter-spacing:1.5px}
+    .bp-status{font-size:10px;color:var(--cyan);font-weight:600}
+    .bp-title{
+      font-family:'Orbitron',sans-serif;font-size:15px;font-weight:600;color:#00ff9d;
+      text-shadow:0 0 12px rgba(0,255,157,.35);line-height:1.3;margin-bottom:4px;
+    }
+    .bp-author{font-size:12px;color:var(--muted);margin-bottom:10px}
+    .bp-progress-bar{
+      height:6px;background:#151a24;border-radius:3px;overflow:hidden;margin-bottom:6px;
+    }
+    .bp-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));width:0%;transition:width .2s}
+    .bp-progress-text{font-size:10px;color:var(--muted);text-align:right}
+
+    .bp-controls{
+      display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;flex-shrink:0;
+    }
+    .bp-btn{
+      padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:var(--card);
+      color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+      display:flex;flex-direction:column;align-items:center;gap:4px;
+    }
+    .bp-btn.primary{
+      background:linear-gradient(135deg,var(--accent),var(--accent-dim));border:none;color:#081000;
+      box-shadow:0 0 14px var(--glow);
+    }
+    .bp-btn:disabled{opacity:.4;cursor:default}
+    .bp-btn .ico{font-size:18px}
+
+    .bp-opts{display:flex;gap:8px;margin-bottom:10px;flex-shrink:0;flex-wrap:wrap}
+    .bp-opts select{
+      flex:1;min-width:100px;background:var(--card);border:1px solid var(--border);
+      color:var(--text);border-radius:8px;padding:8px;font-size:11px;font-family:inherit;
+    }
+    .bp-save{
+      width:100%;padding:10px;border-radius:10px;border:1px solid rgba(124,252,0,.4);
+      background:rgba(124,252,0,.1);color:var(--accent);font-size:12px;font-weight:700;
+      cursor:pointer;font-family:inherit;margin-bottom:10px;flex-shrink:0;
+    }
+
+    .bp-text{
+      flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      background:var(--card);border:1px solid var(--border);border-radius:12px;
+      padding:12px;font-size:13px;line-height:1.55;white-space:pre-wrap;
+    }
+
+    .footer{text-align:center;font-size:9px;color:var(--muted);padding:6px 12px 10px;flex-shrink:0}
+    .footer a{color:var(--accent);text-decoration:none}
+
+    .toast{
+      position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);
+      background:var(--elevated);border:1px solid var(--border);color:var(--text);
+      font-size:12px;padding:9px 16px;border-radius:10px;opacity:0;transition:all .25s;
+      z-index:100;pointer-events:none;max-width:90%;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="brand">
+        <img src="alien-logo.png" alt="Alien" />
+        <div>
+          <h1>ALIEN RADIO</h1>
+          <p>Radio · Free Books</p>
+        </div>
+      </div>
+      <div class="live-dot" id="liveDot"></div>
+    </div>
+
+    <div class="main-tabs">
+      <button class="main-tab active" data-panel="radio">📡 Radio</button>
+      <button class="main-tab" data-panel="books">📚 Books</button>
+    </div>
+
+    <!-- RADIO -->
+    <div class="panel active" id="panel-radio">
+      <div class="search-wrap">
+        <div class="search-bar">
+          <input type="text" id="radioQ" placeholder="Search stations, genres, cities…" />
+          <button id="radioSearch">Search</button>
+        </div>
+      </div>
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-view="browse">Browse</button>
+        <button class="sub-tab" data-view="favs">♥ Favorites</button>
+        <button class="sub-tab" data-view="recent">Recent</button>
+      </div>
+      <div class="filters" id="radioFilters">
+        <button class="chip active" data-t="top">🔥 Popular</button>
+        <button class="chip" data-t="clicks">📈 Trending</button>
+        <button class="chip" data-t="tag" data-v="rock">Rock</button>
+        <button class="chip" data-t="tag" data-v="pop">Pop</button>
+        <button class="chip" data-t="tag" data-v="jazz">Jazz</button>
+        <button class="chip" data-t="tag" data-v="electronic">Electronic</button>
+        <button class="chip" data-t="tag" data-v="classical">Classical</button>
+        <button class="chip" data-t="tag" data-v="news">News</button>
+        <button class="chip" data-t="tag" data-v="hip hop">Hip-Hop</button>
+        <button class="chip" data-t="tag" data-v="metal">Metal</button>
+        <button class="chip" data-t="tag" data-v="country">Country</button>
+        <button class="chip" data-t="tag" data-v="reggae">Reggae</button>
+        <button class="chip" data-t="tag" data-v="latin">Latin</button>
+        <button class="chip" data-t="tag" data-v="ambient">Ambient</button>
+        <button class="chip" data-t="country" data-v="United States">USA</button>
+        <button class="chip" data-t="country" data-v="United Kingdom">UK</button>
+        <button class="chip" data-t="country" data-v="Germany">Germany</button>
+        <button class="chip" data-t="country" data-v="France">France</button>
+        <button class="chip" data-t="country" data-v="Japan">Japan</button>
+        <button class="chip" data-t="country" data-v="Brazil">Brazil</button>
+        <button class="chip" data-t="country" data-v="India">India</button>
+        <button class="chip" data-t="language" data-v="english">English</button>
+        <button class="chip" data-t="language" data-v="spanish">Spanish</button>
+      </div>
+      <div class="list-header">
+        <span id="radioCount">Loading…</span>
+        <button class="surprise-btn" id="surprise">🎲 Surprise</button>
+      </div>
+      <div class="list-wrap" id="radioList"><div class="loading">Contacting stations…</div></div>
+      <button class="load-more" id="radioMore">Load more stations</button>
+
+      <div class="player-bar" id="playerBar">
+        <div class="viz-wrap"><canvas id="viz"></canvas></div>
+        <div class="np">
+          <img class="np-logo" src="alien-logo.png" alt="" />
+          <div class="np-text">
+            <div class="np-label">Now transmitting</div>
+            <div class="np-title" id="npTitle">—</div>
+            <div class="np-sub" id="npSub">—</div>
+          </div>
+          <div class="np-btns">
+            <button class="np-btn heart-btn" id="npHeart">♡</button>
+            <button class="np-btn" id="npStop">⏹</button>
+            <button class="np-btn main" id="npToggle">▶</button>
+          </div>
+        </div>
+        <div class="controls-row">
+          <div class="vol-group">
+            <button id="muteBtn">🔊</button>
+            <input type="range" id="vol" min="0" max="100" value="85" />
+          </div>
+          <button class="timer-btn" id="timerBtn">⏱ Sleep</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOKS -->
+    <div class="panel" id="panel-books">
+      <div id="booksBrowse" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+        <div class="search-wrap">
+          <div class="search-bar">
+            <input type="text" id="bookQ" placeholder="Search free books (Pride, Sherlock…)" />
+            <button id="bookSearch">Search</button>
+          </div>
+        </div>
+        <div class="filters" id="bookFilters">
+          <button class="chip active" data-b="popular">🔥 Popular</button>
+          <button class="chip" data-b="fiction">Fiction</button>
+          <button class="chip" data-b="science">Science</button>
+          <button class="chip" data-b="history">History</button>
+          <button class="chip" data-b="philosophy">Philosophy</button>
+          <button class="chip" data-b="poetry">Poetry</button>
+          <button class="chip" data-b="children">Children</button>
+          <button class="chip" data-b="adventure">Adventure</button>
+        </div>
+        <div class="list-header"><span id="bookCount">Free public domain books</span></div>
+        <div class="list-wrap" id="bookList"><div class="loading">Loading free books…</div></div>
+        <button class="load-more" id="bookMore">Load more books</button>
+      </div>
+
+      <!-- Radio-style book player -->
+      <div class="book-player" id="bookPlayer">
+        <button class="bp-back" id="bookBack">← Back to books</button>
+        <div class="bp-lcd">
+          <div class="bp-lcd-top">
+            <div class="bp-mode">BOOK RECEIVER</div>
+            <div class="bp-status" id="bpStatus">READY</div>
+          </div>
+          <div class="bp-title" id="bpTitle">—</div>
+          <div class="bp-author" id="bpAuthor">—</div>
+          <div class="bp-progress-bar"><div class="bp-progress-fill" id="bpFill"></div></div>
+          <div class="bp-progress-text" id="bpProg">0%</div>
+        </div>
+        <div class="bp-controls">
+          <button class="bp-btn primary" id="bpPlay"><span class="ico">▶</span>Play</button>
+          <button class="bp-btn" id="bpPause" disabled><span class="ico">⏸</span>Pause</button>
+          <button class="bp-btn" id="bpStop" disabled><span class="ico">⏹</span>Stop</button>
+        </div>
+        <div class="bp-opts">
+          <select id="voiceSelect"></select>
+          <select id="rateSelect">
+            <option value="0.8">0.8× speed</option>
+            <option value="1" selected>1× speed</option>
+            <option value="1.2">1.2× speed</option>
+            <option value="1.5">1.5× speed</option>
+          </select>
+        </div>
+        <button class="bp-save" id="bpSave">⬇ Save book as text file</button>
+        <div class="bp-text" id="bpText">Book text loads after download…</div>
+      </div>
+    </div>
+
+    <div class="footer">Alien Radio · Radio Browser + Project Gutenberg</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <audio id="audio" preload="none" crossorigin="anonymous"></audio>
+
+  <script>
+    const API_RADIO = ['https://de1.api.radio-browser.info','https://nl1.api.radio-browser.info','https://at1.api.radio-browser.info','https://fr1.api.radio-browser.info'];
+    const LIMIT = 48;
+    const LS_FAVS = 'alienradio_favs_v3';
+    const LS_RECENT = 'alienradio_recent_v3';
+    const CORS = 'https://corsproxy.io/?';
+
+    function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+    function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+    // ===== RADIO =====
+    let stations=[], current=null, playing=false, muted=false, offset=0, query={t:'top'}, view='browse';
+    let favs=JSON.parse(localStorage.getItem(LS_FAVS)||'[]');
+    let recent=JSON.parse(localStorage.getItem(LS_RECENT)||'[]');
+    let sleepTimer=null, sleepLeft=0;
+    const audio=document.getElementById('audio');
+    let audioCtx, analyser, srcNode;
+
+    async function radioApi(path){
+      for(const b of API_RADIO){
+        try{const r=await fetch(b+path,{headers:{'User-Agent':'AlienRadio/1.0',Accept:'application/json'}});if(r.ok)return await r.json()}catch(_){}
+      }
+      throw new Error('offline');
+    }
+    function isFav(u){return favs.some(f=>f.stationuuid===u)}
+    function toggleFav(st){
+      if(!st)return;
+      const i=favs.findIndex(f=>f.stationuuid===st.stationuuid);
+      if(i>=0){favs.splice(i,1);toast('Removed from favorites')}
+      else{favs.unshift({stationuuid:st.stationuuid,name:st.name,url:st.url_resolved||st.url,favicon:st.favicon,country:st.country,bitrate:st.bitrate,tags:st.tags,codec:st.codec});if(favs.length>100)favs.pop();toast('Added to favorites ♥')}
+      localStorage.setItem(LS_FAVS,JSON.stringify(favs));updateHearts();if(view==='favs')renderRadio(favs);
+    }
+    function addRecent(st){
+      if(!st)return;
+      recent=recent.filter(r=>r.stationuuid!==st.stationuuid);
+      recent.unshift({stationuuid:st.stationuuid,name:st.name,url:st.url_resolved||st.url,favicon:st.favicon,country:st.country,bitrate:st.bitrate,tags:st.tags,codec:st.codec});
+      if(recent.length>40)recent.pop();localStorage.setItem(LS_RECENT,JSON.stringify(recent));
+    }
+    function updateHearts(){
+      document.querySelectorAll('#radioList .item').forEach((el,i)=>{
+        const st=stations[i];if(!st)return;
+        const h=el.querySelector('.heart');if(h){const on=isFav(st.stationuuid);h.classList.toggle('on',on);h.textContent=on?'♥':'♡'}
+      });
+      if(current){const on=isFav(current.stationuuid);document.getElementById('npHeart').classList.toggle('on',on);document.getElementById('npHeart').textContent=on?'♥':'♡'}
+    }
+    function renderRadio(arr,append=false){
+      if(!append)stations=arr;else stations=stations.concat(arr);
+      const list=document.getElementById('radioList');
+      if(!stations.length){
+        list.innerHTML=view==='favs'?'<div class="empty"><div class="big">♡</div>No favorites yet</div>':view==='recent'?'<div class="empty"><div class="big">🕑</div>Nothing played yet</div>':'<div class="empty"><div class="big">👽</div>No stations found</div>';
+        document.getElementById('radioCount').textContent='0 stations';
+        document.getElementById('radioMore').classList.remove('show');return;
+      }
+      list.innerHTML=stations.map((s,i)=>{
+        const fav=s.favicon&&String(s.favicon).startsWith('http')?`<img class="item-icon" src="${s.favicon}" loading="lazy" onerror="this.outerHTML='<div class=\\'item-icon ph\\'>👽</div>'"/>`:`<div class="item-icon ph">👽</div>`;
+        const tags=(s.tags||'').split(',').filter(Boolean).slice(0,2).join(', ');
+        const meta=[s.country,s.bitrate?s.bitrate+' kbps':'',tags].filter(Boolean).join(' · ');
+        const on=current&&current.stationuuid===s.stationuuid;
+        const heartOn=isFav(s.stationuuid);
+        return `<div class="item ${on?'playing':''}" data-i="${i}">${fav}<div class="item-info"><div class="item-name">${esc(s.name)}</div><div class="item-meta">${esc(meta)}</div></div><div class="item-actions"><button class="heart ${heartOn?'on':''}" data-fav="${i}">${heartOn?'♥':'♡'}</button><span class="play-ico">${on&&playing?'⏸':'▶'}</span></div></div>`;
+      }).join('');
+      document.getElementById('radioCount').textContent=stations.length+' stations';
+      document.getElementById('radioMore').classList.toggle('show',view==='browse'&&arr.length>=LIMIT);
+    }
+    function radioPath(q,off){
+      if(q.t==='top')return `/json/stations/topvote/${LIMIT}?offset=${off}&hidebroken=true`;
+      if(q.t==='clicks')return `/json/stations/topclick/${LIMIT}?offset=${off}&hidebroken=true`;
+      if(q.t==='search')return `/json/stations/search?name=${encodeURIComponent(q.v)}&limit=${LIMIT}&offset=${off}&hidebroken=true&order=votes&reverse=true`;
+      if(q.t==='tag')return `/json/stations/search?tag=${encodeURIComponent(q.v)}&limit=${LIMIT}&offset=${off}&hidebroken=true&order=votes&reverse=true`;
+      if(q.t==='country')return `/json/stations/search?country=${encodeURIComponent(q.v)}&limit=${LIMIT}&offset=${off}&hidebroken=true&order=votes&reverse=true`;
+      if(q.t==='language')return `/json/stations/search?language=${encodeURIComponent(q.v)}&limit=${LIMIT}&offset=${off}&hidebroken=true&order=votes&reverse=true`;
+      return `/json/stations/topvote/${LIMIT}?offset=${off}&hidebroken=true`;
+    }
+    async function loadRadio(q,append=false){
+      if(view!=='browse')return;
+      if(!append){document.getElementById('radioList').innerHTML='<div class="loading">Scanning airwaves…</div>';offset=0;query=q}
+      try{const data=await radioApi(radioPath(q,offset));renderRadio(data.filter(s=>s.url_resolved||s.url),append);offset+=LIMIT}
+      catch{if(!append)document.getElementById('radioList').innerHTML='<div class="err">Could not load stations</div>'}
+    }
+    function initAudio(){
+      if(audioCtx)return;
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      analyser=audioCtx.createAnalyser();analyser.fftSize=128;analyser.smoothingTimeConstant=.75;
+      srcNode=audioCtx.createMediaElementSource(audio);srcNode.connect(analyser);analyser.connect(audioCtx.destination);
+    }
+    function drawViz(){
+      requestAnimationFrame(drawViz);
+      const c=document.getElementById('viz'),ctx=c.getContext('2d'),dpr=devicePixelRatio||1;
+      const w=c.width/dpr,h=c.height/dpr;
+      if(!analyser||!playing){ctx.fillStyle='#070a10';ctx.fillRect(0,0,w,h);return}
+      const buf=new Uint8Array(analyser.frequencyBinCount);analyser.getByteFrequencyData(buf);
+      ctx.fillStyle='rgba(7,10,16,.35)';ctx.fillRect(0,0,w,h);
+      const n=Math.floor(buf.length*.7),bw=w/n;
+      for(let i=0;i<n;i++){const bh=(buf[i]/255)*h*.9;ctx.fillStyle=`hsla(${90+buf[i]/5},95%,55%,.9)`;ctx.fillRect(i*bw,h-bh,bw-1.2,bh)}
+    }
+    function resizeViz(){
+      const c=document.getElementById('viz'),r=c.parentElement.getBoundingClientRect(),dpr=devicePixelRatio||1;
+      c.width=r.width*dpr;c.height=r.height*dpr;c.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+    }
+    function playStation(st){
+      if(!st)return;stopBook();
+      const url=st.url_resolved||st.url;if(!url)return;
+      current=st;addRecent(st);audio.src=url;audio.volume=muted?0:document.getElementById('vol').value/100;
+      initAudio();if(audioCtx.state==='suspended')audioCtx.resume();
+      audio.play().then(()=>{playing=true;updatePlayer()}).catch(()=>{
+        playing=false;document.getElementById('npTitle').textContent=st.name;
+        document.getElementById('npSub').textContent='Stream offline — try another';
+        document.getElementById('playerBar').classList.add('show');updatePlayer();
+      });
+    }
+    function updatePlayer(){
+      if(!current)return;
+      document.getElementById('playerBar').classList.add('show');
+      document.getElementById('liveDot').classList.toggle('on',playing);
+      document.getElementById('npTitle').textContent=current.name||'Unknown';
+      document.getElementById('npSub').textContent=[current.country,current.bitrate?current.bitrate+' kbps':''].filter(Boolean).join(' · ')||'Stream';
+      document.getElementById('npToggle').textContent=playing?'⏸':'▶';
+      const on=isFav(current.stationuuid);
+      document.getElementById('npHeart').classList.toggle('on',on);document.getElementById('npHeart').textContent=on?'♥':'♡';
+      document.querySelectorAll('#radioList .item').forEach((el,i)=>{
+        const s=stations[i],m=s&&current&&s.stationuuid===current.stationuuid;
+        el.classList.toggle('playing',m);const ico=el.querySelector('.play-ico');if(ico)ico.textContent=m&&playing?'⏸':'▶';
+      });
+      resizeViz();
+    }
+    function togglePlay(){if(!current)return;if(playing){audio.pause();playing=false}else{audio.play().then(()=>playing=true).catch(()=>{})}updatePlayer()}
+    function stopRadio(){
+      audio.pause();audio.removeAttribute('src');playing=false;current=null;
+      document.getElementById('playerBar').classList.remove('show');document.getElementById('liveDot').classList.remove('on');
+      document.querySelectorAll('#radioList .item').forEach(el=>{el.classList.remove('playing');const ico=el.querySelector('.play-ico');if(ico)ico.textContent='▶'});
+      clearSleep();
+    }
+    function setRadioView(v){
+      view=v;
+      document.querySelectorAll('#panel-radio .sub-tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));
+      document.getElementById('radioFilters').style.display=v==='browse'?'flex':'none';
+      document.getElementById('radioMore').classList.remove('show');
+      if(v==='browse')loadRadio(query);else if(v==='favs')renderRadio(favs);else renderRadio(recent);
+    }
+    function clearSleep(){if(sleepTimer)clearInterval(sleepTimer);sleepTimer=null;sleepLeft=0;document.getElementById('timerBtn').textContent='⏱ Sleep';document.getElementById('timerBtn').classList.remove('active')}
+    function startSleep(mins){
+      clearSleep();sleepLeft=mins*60;const btn=document.getElementById('timerBtn');
+      btn.classList.add('active');btn.textContent=`⏱ ${mins}m`;
+      sleepTimer=setInterval(()=>{sleepLeft--;if(sleepLeft<=0){stopRadio();toast('Sleep timer ended');clearSleep();return}btn.textContent=`⏱ ${Math.ceil(sleepLeft/60)}m`},1000);
+      toast(`Sleep: ${mins} min`);
+    }
+
+    document.getElementById('radioSearch').onclick=()=>{
+      const v=document.getElementById('radioQ').value.trim();setRadioView('browse');
+      if(v){loadRadio({t:'search',v});document.querySelectorAll('#radioFilters .chip').forEach(c=>c.classList.remove('active'))}
+      else loadRadio({t:'top'});
+    };
+    document.getElementById('radioQ').onkeydown=e=>{if(e.key==='Enter')document.getElementById('radioSearch').click()};
+    document.querySelectorAll('#panel-radio .sub-tab').forEach(t=>t.onclick=()=>setRadioView(t.dataset.view));
+    document.getElementById('radioFilters').onclick=e=>{
+      const c=e.target.closest('.chip');if(!c)return;
+      document.querySelectorAll('#radioFilters .chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');
+      document.getElementById('radioQ').value='';const t=c.dataset.t,v=c.dataset.v;
+      loadRadio(t==='top'||t==='clicks'?{t}:{t,v});
+    };
+    document.getElementById('radioList').onclick=e=>{
+      const heart=e.target.closest('.heart');if(heart){e.stopPropagation();toggleFav(stations[+heart.dataset.fav]);return}
+      const row=e.target.closest('.item');if(!row)return;const s=stations[+row.dataset.i];
+      if(current&&current.stationuuid===s.stationuuid)togglePlay();else playStation(s);
+    };
+    document.getElementById('radioMore').onclick=()=>loadRadio(query,true);
+    document.getElementById('npToggle').onclick=togglePlay;
+    document.getElementById('npStop').onclick=stopRadio;
+    document.getElementById('npHeart').onclick=()=>toggleFav(current);
+    document.getElementById('vol').oninput=()=>{if(!muted)audio.volume=document.getElementById('vol').value/100};
+    document.getElementById('muteBtn').onclick=()=>{muted=!muted;audio.volume=muted?0:document.getElementById('vol').value/100;document.getElementById('muteBtn').textContent=muted?'🔇':'🔊'};
+    document.getElementById('timerBtn').onclick=()=>{
+      if(sleepTimer){clearSleep();toast('Timer cancelled');return}
+      const opts=[15,30,45,60],btn=document.getElementById('timerBtn'),cur=parseInt(btn.dataset.next||'0',10);
+      startSleep(opts[cur%4]);btn.dataset.next=(cur+1)%4;
+    };
+    document.getElementById('surprise').onclick=async()=>{
+      setRadioView('browse');document.getElementById('radioList').innerHTML='<div class="loading">Finding signal…</div>';
+      try{const data=await radioApi('/json/stations/topvote/80?hidebroken=true');const valid=data.filter(s=>s.url_resolved||s.url);
+        if(valid.length){renderRadio(valid.slice(0,48));playStation(valid[Math.floor(Math.random()*valid.length)]);toast('🎲 Surprised!')}
+      }catch{document.getElementById('radioList').innerHTML='<div class="err">Failed</div>'}
+    };
+    audio.addEventListener('ended',()=>{playing=false;updatePlayer()});
+    audio.addEventListener('error',()=>{if(current){document.getElementById('npSub').textContent='Stream error';playing=false;updatePlayer()}});
+
+    // ===== BOOKS =====
+    let books=[], bookPage=1, bookQuery='popular', currentBook=null, bookText='';
+    let utterances=[], utterIndex=0, speaking=false, paused=false;
+    const synth=window.speechSynthesis;
+
+    async function loadBooks(q, page=1, append=false){
+      if(!append){document.getElementById('bookList').innerHTML='<div class="loading">Loading free books…</div>';bookPage=1;bookQuery=q}
+      try{
+        let url='https://gutendex.com/books/?';
+        if(q==='popular')url+='languages=en';
+        else if(q.startsWith('search:'))url+='search='+encodeURIComponent(q.slice(7))+'&languages=en';
+        else url+='topic='+encodeURIComponent(q)+'&languages=en';
+        url+='&page='+page;
+        const res=await fetch(url);const data=await res.json();
+        const results=data.results||[];
+        if(!append)books=results;else books=books.concat(results);
+        renderBooks();
+        bookPage=page;
+        document.getElementById('bookMore').classList.toggle('show',!!data.next);
+        document.getElementById('bookCount').textContent=(data.count?data.count.toLocaleString()+' free books · ':'')+books.length+' shown';
+      }catch{if(!append)document.getElementById('bookList').innerHTML='<div class="err">Could not load books</div>'}
+    }
+    function renderBooks(){
+      const list=document.getElementById('bookList');
+      if(!books.length){list.innerHTML='<div class="empty"><div class="big">📚</div>No books found</div>';return}
+      list.innerHTML=books.map((b,i)=>{
+        const author=(b.authors&&b.authors[0])?b.authors[0].name:'Unknown';
+        const cover=b.formats&&(b.formats['image/jpeg']||b.formats['image/png']);
+        const icon=cover?`<img class="item-icon" src="${cover}" loading="lazy" onerror="this.outerHTML='<div class=\\'item-icon ph\\'>📖</div>'"/>`:`<div class="item-icon ph">📖</div>`;
+        return `<div class="item" data-bi="${i}">
+          ${icon}
+          <div class="item-info">
+            <div class="item-name">${esc(b.title)}</div>
+            <div class="item-meta">${esc(author)}${b.download_count?' · '+b.download_count.toLocaleString()+' downloads':''}</div>
+          </div>
+          <div class="item-actions"><button class="dl-btn" data-dl="${i}">Download</button></div>
+        </div>`;
+      }).join('');
+    }
+
+    function getTextUrl(b){
+      const f=b.formats||{};
+      return f['text/plain; charset=utf-8']||f['text/plain; charset=us-ascii']||f['text/plain']||
+        Object.keys(f).find(k=>k.includes('text/plain'))&&f[Object.keys(f).find(k=>k.includes('text/plain'))]||null;
+    }
+
+    async function downloadBook(b){
+      stopRadio();stopBook();
+      currentBook=b;bookText='';
+      document.getElementById('booksBrowse').style.display='none';
+      document.getElementById('bookPlayer').classList.add('show');
+      document.getElementById('bpTitle').textContent=b.title;
+      document.getElementById('bpAuthor').textContent=(b.authors&&b.authors[0])?b.authors[0].name:'Unknown author';
+      document.getElementById('bpStatus').textContent='DOWNLOADING…';
+      document.getElementById('bpText').textContent='Downloading book text…';
+      document.getElementById('bpFill').style.width='0%';
+      document.getElementById('bpProg').textContent='0%';
+      document.getElementById('bpPlay').disabled=true;
+
+      const textUrl=getTextUrl(b);
+      if(!textUrl){
+        document.getElementById('bpStatus').textContent='NO TEXT';
+        document.getElementById('bpText').textContent='No plain-text version for this book. Try another title.';
+        return;
+      }
+
+      // Try direct, then CORS proxies
+      const attempts=[textUrl, CORS+encodeURIComponent(textUrl), 'https://api.allorigins.win/raw?url='+encodeURIComponent(textUrl)];
+      let text=null, lastErr=null;
+      for(const u of attempts){
+        try{
+          const res=await fetch(u,{signal:AbortSignal.timeout(25000)});
+          if(!res.ok)throw new Error('HTTP '+res.status);
+          text=await res.text();
+          if(text&&text.length>500)break;
+          text=null;
+        }catch(e){lastErr=e}
+      }
+
+      if(!text){
+        // Fallback: use summary + subjects as readable content
+        const summary=(b.summaries&&b.summaries[0])||'';
+        const subjects=(b.subjects||[]).join(', ');
+        text=`${b.title}\nby ${(b.authors&&b.authors[0])?b.authors[0].name:'Unknown'}\n\n${summary}\n\nSubjects: ${subjects}\n\nFull plain text could not be loaded automatically (network/CORS). You can still use Save if partial, or open the book on gutenberg.org — ID ${b.id}.`;
+        document.getElementById('bpStatus').textContent='PARTIAL';
+        toast('Full text blocked — showing summary');
+      }else{
+        // Strip Gutenberg boilerplate
+        for(const m of ['*** START OF THE PROJECT GUTENBERG','*** START OF THIS PROJECT GUTENBERG','***START OF THE PROJECT GUTENBERG']){
+          const i=text.indexOf(m);if(i>=0){text=text.slice(text.indexOf('\n',i)+1);break}
+        }
+        for(const m of ['*** END OF THE PROJECT GUTENBERG','*** END OF THIS PROJECT GUTENBERG','***END OF THE PROJECT GUTENBERG']){
+          const i=text.indexOf(m);if(i>=0){text=text.slice(0,i);break}
+        }
+        text=text.replace(/\r\n/g,'\n').trim();
+        if(text.length>120000)text=text.slice(0,120000)+'\n\n[… truncated for browser reading …]';
+        document.getElementById('bpStatus').textContent='LOADED';
+        toast('Book downloaded ✓');
+      }
+
+      bookText=text;
+      document.getElementById('bpText').textContent=text.slice(0,4000)+(text.length>4000?'\n\n…': '');
+      document.getElementById('bpProg').textContent=Math.round(text.length/1000)+'k chars';
+      document.getElementById('bpPlay').disabled=false;
+    }
+
+    function populateVoices(){
+      const sel=document.getElementById('voiceSelect');
+      let list=synth.getVoices().filter(v=>v.lang.startsWith('en'));
+      if(!list.length)list=synth.getVoices();
+      sel.innerHTML=list.map((v,i)=>`<option value="${i}">${v.name}</option>`).join('')||'<option>Default</option>';
+      sel._voices=list;
+    }
+    if(synth.onvoiceschanged!==undefined)synth.onvoiceschanged=populateVoices;
+    populateVoices();
+
+    function stopBook(){
+      synth.cancel();speaking=false;paused=false;utterIndex=0;
+      document.getElementById('bpPlay').disabled=!bookText;
+      document.getElementById('bpPause').disabled=true;
+      document.getElementById('bpPause').textContent='';document.getElementById('bpPause').innerHTML='<span class="ico">⏸</span>Pause';
+      document.getElementById('bpStop').disabled=true;
+      document.getElementById('bpFill').style.width='0%';
+      if(document.getElementById('bpStatus').textContent==='READING'||document.getElementById('bpStatus').textContent==='PAUSED')
+        document.getElementById('bpStatus').textContent='READY';
+    }
+    function speakBook(){
+      if(!bookText)return;
+      stopRadio();synth.cancel();
+      const chunks=bookText.match(/[^.!?]+[.!?]+[\s]*/g)||[bookText];
+      utterances=chunks.filter(c=>c.trim().length>2);
+      utterIndex=0;speaking=true;paused=false;
+      document.getElementById('bpPlay').disabled=true;
+      document.getElementById('bpPause').disabled=false;
+      document.getElementById('bpStop').disabled=false;
+      document.getElementById('bpStatus').textContent='READING';
+      speakNext();
+    }
+    function speakNext(){
+      if(!speaking||utterIndex>=utterances.length){
+        speaking=false;document.getElementById('bpPlay').disabled=false;
+        document.getElementById('bpPause').disabled=true;document.getElementById('bpStop').disabled=true;
+        document.getElementById('bpStatus').textContent='FINISHED';
+        document.getElementById('bpFill').style.width='100%';
+        document.getElementById('bpProg').textContent='100%';
+        return;
+      }
+      const u=new SpeechSynthesisUtterance(utterances[utterIndex]);
+      const sel=document.getElementById('voiceSelect');
+      const voices=sel._voices||synth.getVoices();
+      const vi=parseInt(sel.value,10);if(voices[vi])u.voice=voices[vi];
+      u.rate=parseFloat(document.getElementById('rateSelect').value)||1;
+      u.onend=()=>{utterIndex++;if(speaking&&!paused)speakNext()};
+      u.onerror=()=>{utterIndex++;if(speaking)speakNext()};
+      const pct=Math.round((utterIndex/utterances.length)*100);
+      document.getElementById('bpFill').style.width=pct+'%';
+      document.getElementById('bpProg').textContent=pct+'% · '+ (utterIndex+1)+'/'+utterances.length;
+      const start=Math.max(0,utterIndex-1);
+      document.getElementById('bpText').textContent=utterances.slice(start,start+6).join('')+(utterIndex+6<utterances.length?'\n\n…':'');
+      synth.speak(u);
+    }
+
+    function saveBookFile(){
+      if(!bookText||!currentBook){toast('No book loaded');return}
+      const blob=new Blob([bookText],{type:'text/plain;charset=utf-8'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=(currentBook.title||'book').replace(/[^\w\s-]/g,'').slice(0,60)+'.txt';
+      a.click();URL.revokeObjectURL(a.href);
+      toast('Saved to downloads');
+    }
+
+    document.getElementById('bpPlay').onclick=speakBook;
+    document.getElementById('bpPause').onclick=()=>{
+      if(!speaking)return;
+      if(paused){synth.resume();paused=false;document.getElementById('bpPause').innerHTML='<span class="ico">⏸</span>Pause';document.getElementById('bpStatus').textContent='READING'}
+      else{synth.pause();paused=true;document.getElementById('bpPause').innerHTML='<span class="ico">▶</span>Resume';document.getElementById('bpStatus').textContent='PAUSED'}
+    };
+    document.getElementById('bpStop').onclick=stopBook;
+    document.getElementById('bpSave').onclick=saveBookFile;
+    document.getElementById('bookBack').onclick=()=>{
+      stopBook();document.getElementById('bookPlayer').classList.remove('show');
+      document.getElementById('booksBrowse').style.display='flex';
+    };
+    document.getElementById('bookSearch').onclick=()=>{
+      const v=document.getElementById('bookQ').value.trim();
+      document.querySelectorAll('#bookFilters .chip').forEach(c=>c.classList.remove('active'));
+      if(v)loadBooks('search:'+v);else loadBooks('popular');
+    };
+    document.getElementById('bookQ').onkeydown=e=>{if(e.key==='Enter')document.getElementById('bookSearch').click()};
+    document.getElementById('bookFilters').onclick=e=>{
+      const c=e.target.closest('.chip');if(!c)return;
+      document.querySelectorAll('#bookFilters .chip').forEach(x=>x.classList.remove('active'));
+      c.classList.add('active');document.getElementById('bookQ').value='';loadBooks(c.dataset.b);
+    };
+    document.getElementById('bookList').onclick=e=>{
+      const dl=e.target.closest('.dl-btn');
+      if(dl){e.stopPropagation();downloadBook(books[+dl.dataset.dl]);return}
+      const row=e.target.closest('.item');if(!row)return;
+      downloadBook(books[+row.dataset.bi]);
+    };
+    document.getElementById('bookMore').onclick=()=>loadBooks(bookQuery,bookPage+1,true);
+
+    // Main tabs
+    document.querySelectorAll('.main-tab').forEach(tab=>{
+      tab.onclick=()=>{
+        document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('panel-'+tab.dataset.panel).classList.add('active');
+        if(tab.dataset.panel==='books'&&!books.length)loadBooks('popular');
+      };
+    });
+
+    document.addEventListener('keydown',e=>{
+      if(e.target.matches('input,select'))return;
+      if(e.code==='Space'){e.preventDefault();if(document.getElementById('panel-radio').classList.contains('active'))togglePlay()}
+    });
+
+    window.addEventListener('resize',resizeViz);
+    resizeViz();drawViz();
+    loadRadio({t:'top'});
+  </script>
+</body>
+</html>
