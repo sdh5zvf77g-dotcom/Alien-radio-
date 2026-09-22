@@ -194,11 +194,7 @@
       border:none;color:#081000;font-size:16px;box-shadow:0 0 14px var(--glow);
     }
     .np-btn.heart-btn.on{color:#ff6b9d;border-color:#ff6b9d}
-    .controls-row{display:flex;align-items:center;gap:8px;margin-top:8px}
-    .vol-group{display:flex;align-items:center;gap:6px;flex:1}
-    .vol-group button{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer}
-    .vol-group input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:#1a2130;outline:none}
-    .vol-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 6px var(--glow)}
+    .controls-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px}
     .timer-btn{font-size:10px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border);padding:5px 8px;border-radius:7px;cursor:pointer;font-family:inherit}
     .timer-btn.active{color:var(--purple);border-color:var(--purple)}
 
@@ -352,10 +348,6 @@
           </div>
         </div>
         <div class="controls-row">
-          <div class="vol-group">
-            <button id="muteBtn">🔊</button>
-            <input type="range" id="vol" min="0" max="100" value="85" />
-          </div>
           <button class="timer-btn" id="timerBtn">⏱ Sleep</button>
         </div>
       </div>
@@ -434,12 +426,12 @@
     function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 
     // ===== RADIO =====
-    let stations=[], current=null, playing=false, muted=false, offset=0, query={t:'top'}, view='browse';
+    let stations=[], current=null, playing=false, offset=0, query={t:'top'}, view='browse';
     let favs=JSON.parse(localStorage.getItem(LS_FAVS)||'[]');
     let recent=JSON.parse(localStorage.getItem(LS_RECENT)||'[]');
     let sleepTimer=null, sleepLeft=0;
     const audio=document.getElementById('audio');
-    let audioCtx, analyser, srcNode, gainNode;
+    let audioCtx, analyser, srcNode;
 
     async function radioApi(path){
       for(const b of API_RADIO){
@@ -506,18 +498,7 @@
       if(audioCtx)return;
       audioCtx=new(window.AudioContext||window.webkitAudioContext)();
       analyser=audioCtx.createAnalyser();analyser.fftSize=128;analyser.smoothingTimeConstant=.75;
-      gainNode=audioCtx.createGain();
-      const v=document.getElementById('vol').value/100;
-      gainNode.gain.value=muted?0:v;
-      srcNode=audioCtx.createMediaElementSource(audio);
-      srcNode.connect(analyser);
-      analyser.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-    }
-    function setVolume(v){
-      const level=muted?0:Math.max(0,Math.min(1,v));
-      if(gainNode)gainNode.gain.value=level;
-      audio.volume=level;
+      srcNode=audioCtx.createMediaElementSource(audio);srcNode.connect(analyser);analyser.connect(audioCtx.destination);
     }
     function drawViz(){
       requestAnimationFrame(drawViz);
@@ -536,9 +517,8 @@
     function playStation(st){
       if(!st)return;stopBook();
       const url=st.url_resolved||st.url;if(!url)return;
-      current=st;addRecent(st);audio.src=url;
-      initAudio();setVolume(document.getElementById('vol').value/100);
-      if(audioCtx.state==='suspended')audioCtx.resume();
+      current=st;addRecent(st);audio.src=url;audio.volume=1;
+      initAudio();if(audioCtx.state==='suspended')audioCtx.resume();
       audio.play().then(()=>{playing=true;updatePlayer()}).catch(()=>{
         playing=false;document.getElementById('npTitle').textContent=st.name;
         document.getElementById('npSub').textContent='Stream offline — try another';
@@ -604,12 +584,6 @@
     document.getElementById('npToggle').onclick=togglePlay;
     document.getElementById('npStop').onclick=stopRadio;
     document.getElementById('npHeart').onclick=()=>toggleFav(current);
-    document.getElementById('vol').oninput=()=>{setVolume(document.getElementById('vol').value/100)};
-    document.getElementById('muteBtn').onclick=()=>{
-      muted=!muted;
-      setVolume(document.getElementById('vol').value/100);
-      document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';
-    };
     document.getElementById('timerBtn').onclick=()=>{
       if(sleepTimer){clearSleep();toast('Timer cancelled');return}
       const opts=[15,30,45,60],btn=document.getElementById('timerBtn'),cur=parseInt(btn.dataset.next||'0',10);
@@ -665,24 +639,67 @@
     }
 
     function getTextUrls(b){
-      const f=b.formats||{};
       const urls=[];
+      const id=b.id;
+      // Most reliable: cache/epub plain text (full books, UTF-8)
+      if(id){
+        urls.push('https://www.gutenberg.org/cache/epub/'+id+'/pg'+id+'.txt');
+        urls.push('https://gutenberg.pglaf.org/cache/epub/'+id+'/pg'+id+'.txt');
+        urls.push('https://www.gutenberg.org/files/'+id+'/'+id+'-0.txt');
+        urls.push('https://www.gutenberg.org/files/'+id+'/'+id+'.txt');
+      }
+      // Formats from Gutendex metadata
+      const f=b.formats||{};
       const prefer=['text/plain; charset=utf-8','text/plain; charset=us-ascii','text/plain','text/plain; charset=iso-8859-1'];
-      for(const k of prefer){if(f[k])urls.push(f[k])}
+      for(const k of prefer){if(f[k]&&!urls.includes(f[k]))urls.push(f[k])}
       for(const k of Object.keys(f)){
         if(k.includes('text/plain')&&!urls.includes(f[k]))urls.push(f[k]);
       }
-      if(b.id){
-        const id=b.id;
-        const extras=[
-          `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
-          `https://www.gutenberg.org/files/${id}/${id}-0.txt`,
-          `https://www.gutenberg.org/files/${id}/${id}.txt`,
-          `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`
-        ];
-        for(const u of extras)if(!urls.includes(u))urls.push(u);
-      }
       return urls;
+    }
+
+    function proxyUrl(raw){
+      // corsmirror works for full multi-MB Gutenberg texts (tested)
+      return 'https://corsmirror.onrender.com/v1/cors?url='+encodeURIComponent(raw);
+    }
+
+    async function fetchBookText(urls){
+      // 1) Try corsmirror for each candidate URL
+      for(const base of urls){
+        try{
+          const res=await fetch(proxyUrl(base),{signal:AbortSignal.timeout(60000)});
+          if(!res.ok)continue;
+          const t=await res.text();
+          if(t&&t.length>2000&&!t.trimStart().startsWith('<!')&&!t.includes('"success":false'))return t;
+        }catch(_){}
+      }
+      // 2) jina.ai reader (returns text/markdown with CORS)
+      for(const base of urls.slice(0,2)){
+        try{
+          const res=await fetch('https://r.jina.ai/'+base,{signal:AbortSignal.timeout(60000)});
+          if(!res.ok)continue;
+          let t=await res.text();
+          // Strip jina wrapper if present
+          const md=t.indexOf('Markdown Content:');
+          if(md>=0)t=t.slice(md+17);
+          if(t&&t.length>2000)return t;
+        }catch(_){}
+      }
+      // 3) Last resort: other public proxies (may fail on large files)
+      for(const base of urls.slice(0,1)){
+        for(const px of [
+          u=>'https://api.cors.lol/?url='+encodeURIComponent(u),
+          u=>CORS+encodeURIComponent(u)
+        ]){
+          try{
+            const res=await fetch(px(base),{signal:AbortSignal.timeout(30000)});
+            if(!res.ok)continue;
+            const t=await res.text();
+            if(t&&t.length>2000&&!t.trimStart().startsWith('<!'))return t;
+          }catch(_){}
+        }
+      }
+      return null;
     }
 
     async function downloadBook(b){
@@ -693,8 +710,8 @@
       document.getElementById('bpTitle').textContent=b.title;
       document.getElementById('bpAuthor').textContent=(b.authors&&b.authors[0])?b.authors[0].name:'Unknown author';
       document.getElementById('bpStatus').textContent='DOWNLOADING…';
-      document.getElementById('bpText').textContent='Downloading full book text…\nThis may take a moment for longer titles.';
-      document.getElementById('bpFill').style.width='5%';
+      document.getElementById('bpText').textContent='Downloading full book text…\nLonger titles can take 10–30 seconds.';
+      document.getElementById('bpFill').style.width='8%';
       document.getElementById('bpProg').textContent='fetching…';
       document.getElementById('bpPlay').disabled=true;
 
@@ -706,35 +723,12 @@
         return;
       }
 
-      const proxies=[
-        u=>u,
-        u=>CORS+encodeURIComponent(u),
-        u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-        u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
-        u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)
-      ];
-
-      let text=null;
-      outer: for(const base of textUrls){
-        for(const px of proxies){
-          const u=px(base);
-          try{
-            document.getElementById('bpProg').textContent='trying source…';
-            const res=await fetch(u,{signal:AbortSignal.timeout(45000)});
-            if(!res.ok)throw new Error('HTTP '+res.status);
-            const t=await res.text();
-            if(t&&t.length>2000&&!t.trimStart().startsWith('<!')){
-              text=t;
-              break outer;
-            }
-          }catch(_){}
-        }
-      }
+      let text=await fetchBookText(textUrls);
 
       if(!text){
         const summary=(b.summaries&&b.summaries[0])||'';
         const subjects=(b.subjects||[]).join(', ');
-        text=`${b.title}\nby ${(b.authors&&b.authors[0])?b.authors[0].name:'Unknown'}\n\n${summary}\n\nSubjects: ${subjects}\n\nFull plain text could not be loaded automatically (network/CORS). You can still use Save if partial, or open the book on gutenberg.org — ID ${b.id}.`;
+        text=`${b.title}\nby ${(b.authors&&b.authors[0])?b.authors[0].name:'Unknown'}\n\n${summary}\n\nSubjects: ${subjects}\n\nFull plain text could not be loaded (network/CORS). Open on gutenberg.org — ID ${b.id}.`;
         document.getElementById('bpStatus').textContent='PARTIAL';
         toast('Full text blocked — showing summary');
       }else{
@@ -745,6 +739,7 @@
           const i=text.indexOf(m);if(i>=0){text=text.slice(0,i);break}
         }
         text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim();
+        // Keep FULL text — no truncation. TTS reads sentence-by-sentence.
         document.getElementById('bpStatus').textContent='LOADED';
         toast('Full book downloaded ✓');
       }
